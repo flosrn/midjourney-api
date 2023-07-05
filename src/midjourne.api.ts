@@ -2,6 +2,9 @@ import { DiscordImage, MJConfig, UploadParam, UploadSlot } from "./interfaces";
 import { CreateQueue } from "./queue";
 import { nextNonce, sleep } from "./utls";
 import { Command } from "./command";
+import path from "path";
+import * as fs from "fs";
+import mime from "mime";
 export class MidjourneyApi extends Command {
   private apiQueue = CreateQueue(1);
   UpId = Date.now() % 10; // upload id
@@ -163,41 +166,41 @@ export class MidjourneyApi extends Command {
    * @param fileUrl http or local file path
    * @returns
    */
-  // async UploadImage(fileUrl: string) {
-  //   let fileData;
-  //   let mimeType;
-  //   let filename;
-  //   let file_size;
-  //
-  //   if (fileUrl.startsWith("http")) {
-  //     const response = await this.config.fetch(fileUrl);
-  //     fileData = await response.arrayBuffer();
-  //     mimeType = response.headers.get("content-type");
-  //     filename = path.basename(fileUrl) || "image.png";
-  //     file_size = fileData.byteLength;
-  //   } else {
-  //     fileData = await fs.promises.readFile(fileUrl);
-  //     mimeType = mime.getType(fileUrl);
-  //     filename = path.basename(fileUrl);
-  //     file_size = (await fs.promises.stat(fileUrl)).size;
-  //   }
-  //   if (!mimeType) {
-  //     throw new Error("Unknown mime type");
-  //   }
-  //   const { attachments } = await this.attachments({
-  //     filename,
-  //     file_size,
-  //     id: this.UpId++,
-  //   });
-  //   const UploadSlot = attachments[0];
-  //   await this.uploadImage(UploadSlot, fileData, mimeType);
-  //   const response: DiscordImage = {
-  //     id: UploadSlot.id,
-  //     filename: path.basename(UploadSlot.upload_filename),
-  //     upload_filename: UploadSlot.upload_filename,
-  //   };
-  //   return response;
-  // }
+  async UploadImage(fileUrl: string) {
+    let fileData;
+    let mimeType;
+    let filename;
+    let file_size;
+
+    if (fileUrl.startsWith("http")) {
+      const response = await this.config.fetch(fileUrl);
+      fileData = await response.arrayBuffer();
+      mimeType = response.headers.get("content-type");
+      filename = path.basename(fileUrl) || "image.png";
+      file_size = fileData.byteLength;
+    } else {
+      fileData = await fs.promises.readFile(fileUrl);
+      mimeType = mime.getType(fileUrl);
+      filename = path.basename(fileUrl);
+      file_size = (await fs.promises.stat(fileUrl)).size;
+    }
+    if (!mimeType) {
+      throw new Error("Unknown mime type");
+    }
+    const { attachments } = await this.attachments({
+      filename,
+      file_size,
+      id: this.UpId++,
+    });
+    const UploadSlot = attachments[0];
+    await this.uploadImage(UploadSlot, fileData, mimeType);
+    const response: DiscordImage = {
+      id: UploadSlot.id,
+      filename: path.basename(UploadSlot.upload_filename),
+      upload_filename: UploadSlot.upload_filename,
+    };
+    return response;
+  }
 
   /**
    * prepare an attachement to upload an image.

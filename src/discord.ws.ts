@@ -316,6 +316,7 @@ export class WsMessage {
       progress: "done",
       uri: attachments[0].url,
       options: formatOptions(components),
+      attachment: attachments[0],
       referencedMessage: referenced_message?.attachments?.[0]
     };
     this.filterMessages(MJmsg);

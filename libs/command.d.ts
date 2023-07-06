@@ -1,14 +1,25 @@
 import { DiscordImage, MJConfig } from "./interfaces";
-type CommandName = "imagine" | "shorten" | "describe" | "info" | "fast" | "relax" | "settings";
+export declare const Commands: readonly ["ask", "blend", "describe", "fast", "help", "imagine", "info", "prefer", "private", "public", "relax", "settings", "show", "stealth", "shorten", "subscribe"];
+export type CommandName = typeof Commands[number];
 export declare class Command {
     config: MJConfig;
     constructor(config: MJConfig);
-    private cache;
+    cache: Partial<Record<CommandName, Command>>;
     cacheCommand(name: CommandName): Promise<any>;
+    allCommand(): Promise<void>;
     getCommand(name: CommandName): Promise<any>;
     imaginePayload(prompt: string, nonce?: string): Promise<{
         type: number;
-        application_id: string;
+        application_id: any;
+        guild_id: string | undefined;
+        channel_id: string;
+        session_id: string;
+        nonce: string | undefined;
+        data: any;
+    }>;
+    PreferPayload(nonce?: string): Promise<{
+        type: number;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -17,7 +28,7 @@ export declare class Command {
     }>;
     shortenPayload(prompt: string, nonce?: string): Promise<{
         type: number;
-        application_id: string;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -26,7 +37,7 @@ export declare class Command {
     }>;
     infoPayload(nonce?: string): Promise<{
         type: number;
-        application_id: string;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -35,7 +46,7 @@ export declare class Command {
     }>;
     fastPayload(nonce?: string): Promise<{
         type: number;
-        application_id: string;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -44,7 +55,7 @@ export declare class Command {
     }>;
     relaxPayload(nonce?: string): Promise<{
         type: number;
-        application_id: string;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -53,7 +64,7 @@ export declare class Command {
     }>;
     settingsPayload(nonce?: string): Promise<{
         type: number;
-        application_id: string;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -62,7 +73,7 @@ export declare class Command {
     }>;
     describePayload(image: DiscordImage, nonce?: string): Promise<{
         type: number;
-        application_id: string;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -80,7 +91,7 @@ export declare class Command {
     }>;
     protected data2Paylod(data: any, nonce?: string): {
         type: number;
-        application_id: string;
+        application_id: any;
         guild_id: string | undefined;
         channel_id: string;
         session_id: string;
@@ -88,4 +99,3 @@ export declare class Command {
         data: any;
     };
 }
-export {};

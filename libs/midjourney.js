@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Midjourney = void 0;
 const interfaces_1 = require("./interfaces");
 const midjourne_api_1 = require("./midjourne.api");
-const midjourney_message_1 = require("./midjourney.message");
+const discord_message_1 = require("./discord.message");
 const utls_1 = require("./utls");
-const ws_message_1 = require("./ws.message");
-class Midjourney extends midjourney_message_1.MidjourneyMessage {
+const discord_ws_1 = require("./discord.ws");
+class Midjourney extends discord_message_1.MidjourneyMessage {
     config;
     wsClient;
     MJApi;
@@ -23,21 +23,39 @@ class Midjourney extends midjourney_message_1.MidjourneyMessage {
         this.MJApi = new midjourne_api_1.MidjourneyApi(this.config);
     }
     async Connect() {
+        //if auth failed, will throw error
+        if (this.config.ServerId) {
+            await this.MJApi.getCommand('settings');
+        }
+        else {
+            await this.MJApi.allCommand();
+        }
         if (!this.config.Ws) {
             return this;
         }
         if (this.wsClient)
             return this;
         return new Promise((resolve) => {
-            this.wsClient = new ws_message_1.WsMessage(this.config, this.MJApi);
-            this.wsClient.once("ready", () => {
-                this.log(`ws ready`);
+            this.wsClient = new discord_ws_1.WsMessage(this.config, this.MJApi);
+            this.wsClient.once("ready", (user) => {
+                //print user nickname
+                console.log(`🎊 ws ready!!! Hi: ${user.global_name}`);
                 resolve(this);
             });
         });
     }
     async init() {
-        return this.Connect();
+        await this.Connect();
+        const settings = await this.Settings();
+        if (settings) {
+            this.log(`settings:`, settings.content);
+            const remix = settings.options.find((o) => o.label === "Remix mode");
+            if (remix?.style == 3) {
+                this.config.Remix = true;
+                this.log(`Remix mode enabled`);
+            }
+        }
+        return this;
     }
     async Imagine(prompt, loading) {
         prompt = prompt.trim();
@@ -52,7 +70,7 @@ class Midjourney extends midjourney_message_1.MidjourneyMessage {
             throw new Error(`ImagineApi failed with status ${httpStatus}`);
         }
         if (this.wsClient) {
-            return await this.wsClient.waitImageMessage(nonce, loading);
+            return await this.wsClient.waitImageMessage({ nonce, loading });
         }
         else {
             this.log(`await generate image`);
@@ -94,7 +112,7 @@ class Midjourney extends midjourney_message_1.MidjourneyMessage {
         const nonce = (0, utls_1.nextNonce)();
         const httpStatus = await this.MJApi.InfoApi(nonce);
         if (httpStatus !== 204) {
-            throw new Error(`ImagineApi failed with status ${httpStatus}`);
+            throw new Error(`InfoApi failed with status ${httpStatus}`);
         }
         if (this.wsClient) {
             return this.wsClient.waitInfo();
@@ -117,19 +135,30 @@ class Midjourney extends midjourney_message_1.MidjourneyMessage {
         }
         return null;
     }
-    // async Describe(imgUri: string) {
-    //   const nonce = nextNonce();
-    //   const DcImage = await this.MJApi.UploadImage(imgUri);
-    //   this.log(`Describe`, DcImage, "nonce", nonce);
-    //   const httpStatus = await this.MJApi.DescribeApi(DcImage, nonce);
-    //   if (httpStatus !== 204) {
-    //     throw new Error(`DescribeApi failed with status ${httpStatus}`);
-    //   }
-    //   if (this.wsClient) {
-    //     return this.wsClient.waitDescribe(nonce);
-    //   }
-    //   return null;
-    // }
+    async SwitchRemix() {
+        const nonce = (0, utls_1.nextNonce)();
+        const httpStatus = await this.MJApi.SwitchRemixApi(nonce);
+        if (httpStatus !== 204) {
+            throw new Error(`RelaxApi failed with status ${httpStatus}`);
+        }
+        if (this.wsClient) {
+            return this.wsClient.waitContent("prefer-remix");
+        }
+        return null;
+    }
+    async Describe(imgUri) {
+        const nonce = (0, utls_1.nextNonce)();
+        const DcImage = await this.MJApi.UploadImage(imgUri);
+        this.log(`Describe`, DcImage, "nonce", nonce);
+        const httpStatus = await this.MJApi.DescribeApi(DcImage, nonce);
+        if (httpStatus !== 204) {
+            throw new Error(`DescribeApi failed with status ${httpStatus}`);
+        }
+        if (this.wsClient) {
+            return this.wsClient.waitDescribe(nonce);
+        }
+        return null;
+    }
     async Shorten(prompt) {
         const nonce = (0, utls_1.nextNonce)();
         const httpStatus = await this.MJApi.ShortenApi(prompt, nonce);
@@ -142,46 +171,25 @@ class Midjourney extends midjourney_message_1.MidjourneyMessage {
         return null;
     }
     async Variation({ index, msgId, hash, content, flags, loading, }) {
-        const nonce = (0, utls_1.nextNonce)();
-        const httpStatus = await this.MJApi.VariationApi({
-            index,
+        return await this.Custom({
+            customId: `MJ::JOB::variation::${index}::${hash}`,
             msgId,
-            hash,
+            content,
             flags,
-            nonce,
+            loading,
         });
-        if (httpStatus !== 204) {
-            throw new Error(`VariationApi failed with status ${httpStatus}`);
-        }
-        if (this.wsClient) {
-            return await this.wsClient.waitImageMessage(nonce, loading);
-        }
-        if (content === undefined || content === "") {
-            throw new Error(`content is required`);
-        }
-        return await this.WaitMessage(content, loading);
     }
     async Upscale({ index, msgId, hash, content, flags, loading, }) {
-        const nonce = (0, utls_1.nextNonce)();
-        const httpStatus = await this.MJApi.UpscaleApi({
-            index,
+        return await this.Custom({
+            customId: `MJ::JOB::upsample::${index}::${hash}`,
             msgId,
-            hash,
+            content,
             flags,
-            nonce,
+            loading,
         });
-        if (httpStatus !== 204) {
-            throw new Error(`UpscaleApi failed with status ${httpStatus}`);
-        }
-        if (this.wsClient) {
-            return await this.wsClient.waitImageMessage(nonce, loading);
-        }
-        if (content === undefined || content === "") {
-            throw new Error(`content is required`);
-        }
-        return await this.WaitMessage(content, loading);
     }
     async Custom({ msgId, customId, content, flags, loading, }) {
+        this.log("Custom", customId, "msgId", msgId, "content", content);
         const nonce = (0, utls_1.nextNonce)();
         const httpStatus = await this.MJApi.CustomApi({
             msgId,
@@ -193,7 +201,47 @@ class Midjourney extends midjourney_message_1.MidjourneyMessage {
             throw new Error(`CustomApi failed with status ${httpStatus}`);
         }
         if (this.wsClient) {
-            return await this.wsClient.waitImageMessage(nonce, loading);
+            return await this.wsClient.waitImageMessage({
+                nonce,
+                loading,
+                onmodal: async (nonde, id) => {
+                    if (content === undefined || content === "") {
+                        return "";
+                    }
+                    const newNonce = (0, utls_1.nextNonce)();
+                    switch ((0, utls_1.custom2Type)(customId)) {
+                        case "customZoom":
+                            const httpStatus = await this.MJApi.CustomZoomImagineApi({
+                                msgId: id,
+                                customId,
+                                prompt: content,
+                                nonce: newNonce,
+                            });
+                            if (httpStatus !== 204) {
+                                throw new Error(`CustomZoomImagineApi failed with status ${httpStatus}`);
+                            }
+                            return newNonce;
+                        case "variation":
+                            if (this.config.Remix !== true) {
+                                return "";
+                            }
+                            customId = (0, utls_1.toRemixCustom)(customId);
+                            const remixHttpStatus = await this.MJApi.RemixApi({
+                                msgId: id,
+                                customId,
+                                prompt: content,
+                                nonce: newNonce,
+                            });
+                            if (remixHttpStatus !== 204) {
+                                throw new Error(`RemixApi failed with status ${remixHttpStatus}`);
+                            }
+                            return newNonce;
+                        default:
+                            return "";
+                            throw new Error(`unknown customId ${customId}`);
+                    }
+                },
+            });
         }
         if (content === undefined || content === "") {
             throw new Error(`content is required`);
@@ -236,7 +284,7 @@ class Midjourney extends midjourney_message_1.MidjourneyMessage {
             throw new Error(`RerollApi failed with status ${httpStatus}`);
         }
         if (this.wsClient) {
-            return await this.wsClient.waitImageMessage(nonce, loading);
+            return await this.wsClient.waitImageMessage({ nonce, loading });
         }
         if (content === undefined || content === "") {
             throw new Error(`content is required`);

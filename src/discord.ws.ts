@@ -307,7 +307,7 @@ export class WsMessage {
   }
 
   private done(message: any) {
-    const { content, id, attachments, components, flags } = message;
+    const { content, id, attachments, components, flags, referenced_message } = message;
     const MJmsg: MJMessage = {
       id,
       flags,
@@ -316,6 +316,7 @@ export class WsMessage {
       progress: "done",
       uri: attachments[0].url,
       options: formatOptions(components),
+      referencedMessage: referenced_message?.attachments?.[0]
     };
     this.filterMessages(MJmsg);
     return;

@@ -6,6 +6,7 @@ export interface MJMessage {
   hash?: string;
   progress?: string;
   options?: MJOptions[];
+  referencedMessage?: MJMessage;
 }
 
 export type LoadingHandler = (uri: string, progress: string) => void;

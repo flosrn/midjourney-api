@@ -275,6 +275,7 @@ class WsMessage {
             progress: "done",
             uri: attachments[0].url,
             options: (0, utls_1.formatOptions)(components),
+            attachment: attachments[0],
             referencedMessage: referenced_message?.attachments?.[0]
         };
         this.filterMessages(MJmsg);

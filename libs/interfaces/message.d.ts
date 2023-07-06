@@ -6,7 +6,18 @@ export interface MJMessage {
     hash?: string;
     progress?: string;
     options?: MJOptions[];
+    attachment?: MJAttachment;
     referencedMessage?: MJMessage;
+}
+export interface MJAttachment {
+    height: number;
+    width: number;
+    size: number;
+    url: string;
+    proxy_url: string;
+    id: string;
+    filename: string;
+    content_type: string;
 }
 export type LoadingHandler = (uri: string, progress: string) => void;
 export type OnModal = (nonce: string, id: string) => Promise<string>;

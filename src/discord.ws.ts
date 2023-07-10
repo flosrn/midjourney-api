@@ -27,6 +27,7 @@ export class WsMessage {
   private event: Array<{ event: string; callback: (message: any) => void }> =
     [];
   private waitMjEvents: Map<string, WaitMjEvent> = new Map();
+  private skipMessageId: string[] = [];
   private reconnectTime: boolean[] = [];
   private heartbeatInterval = 0;
   public UserId = "";
@@ -116,7 +117,6 @@ export class WsMessage {
     if (nonce) {
       // this.log("waiting start image or info or error");
       this.updateMjEventIdByNonce(id, nonce);
-
       if (embeds?.[0]) {
         const { color, description, title } = embeds[0];
         this.log("embeds[0].color", color);
@@ -229,7 +229,7 @@ export class WsMessage {
     if (channel_id !== this.config.ChannelId) return;
     if (author?.id !== this.config.BotId) return;
     if (interaction && interaction.user.id !== this.UserId) return;
-    this.log('[messageCreate]', JSON.stringify(message));
+    this.log("[messageCreate]", JSON.stringify(message));
     this.messageCreate(message);
   }
 
@@ -238,7 +238,7 @@ export class WsMessage {
     if (channel_id !== this.config.ChannelId) return;
     if (author?.id !== this.config.BotId) return;
     if (interaction && interaction.user.id !== this.UserId) return;
-    this.log('[messageUpdate]', JSON.stringify(message));
+    this.log("[messageUpdate]", JSON.stringify(message));
     this.messageUpdate(message);
   }
 
@@ -315,6 +315,7 @@ export class WsMessage {
       hash: uriToHash(attachments[0].url),
       progress: "done",
       uri: attachments[0].url,
+      proxy_url: attachments[0].proxy_url,
       options: formatOptions(components),
       attachment: attachments[0],
       referencedMessage: referenced_message?.attachments?.[0]
@@ -338,6 +339,7 @@ export class WsMessage {
     }
     const MJmsg: MJMessage = {
       uri: attachments[0].url,
+      proxy_url: attachments[0].proxy_url,
       content: content,
       flags: flags,
       progress: content2progress(content),
@@ -471,7 +473,12 @@ export class WsMessage {
     this.waitMjEvents.set(nonce, { nonce });
     this.event.push({ event: nonce, callback: once });
   }
-
+  private removeSkipMessageId(messageId: string) {
+    const index = this.skipMessageId.findIndex((id) => id !== messageId);
+    if (index !== -1) {
+      this.skipMessageId.splice(index, 1);
+    }
+  }
   private removeWaitMjEvent(nonce: string) {
     this.waitMjEvents.delete(nonce);
   }
@@ -490,13 +497,16 @@ export class WsMessage {
     nonce,
     prompt,
     onmodal,
+    messageId,
     loading,
   }: {
     nonce: string;
     prompt?: string;
+    messageId?: string;
     onmodal?: OnModal;
     loading?: LoadingHandler;
   }) {
+    if (messageId) this.skipMessageId.push(messageId);
     return new Promise<MJMessage | null>((resolve, reject) => {
       const handleImageMessage = ({ message, error }: MJEmit) => {
         if (error) {
@@ -506,6 +516,7 @@ export class WsMessage {
         }
         if (message && message.progress === "done") {
           this.removeWaitMjEvent(nonce);
+          messageId && this.removeSkipMessageId(messageId);
           resolve(message);
           return;
         }

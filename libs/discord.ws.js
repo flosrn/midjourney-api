@@ -10,6 +10,7 @@ class WsMessage {
     closed = false;
     event = [];
     waitMjEvents = new Map();
+    skipMessageId = [];
     reconnectTime = [];
     heartbeatInterval = 0;
     UserId = "";
@@ -190,7 +191,7 @@ class WsMessage {
             return;
         if (interaction && interaction.user.id !== this.UserId)
             return;
-        this.log('[messageCreate]', JSON.stringify(message));
+        this.log("[messageCreate]", JSON.stringify(message));
         this.messageCreate(message);
     }
     async onMessageUpdate(message) {
@@ -201,7 +202,7 @@ class WsMessage {
             return;
         if (interaction && interaction.user.id !== this.UserId)
             return;
-        this.log('[messageUpdate]', JSON.stringify(message));
+        this.log("[messageUpdate]", JSON.stringify(message));
         this.messageUpdate(message);
     }
     // parse message from ws
@@ -274,6 +275,7 @@ class WsMessage {
             hash: (0, utls_1.uriToHash)(attachments[0].url),
             progress: "done",
             uri: attachments[0].url,
+            proxy_url: attachments[0].proxy_url,
             options: (0, utls_1.formatOptions)(components),
             attachment: attachments[0],
             referencedMessage: referenced_message?.attachments?.[0]
@@ -297,6 +299,7 @@ class WsMessage {
         }
         const MJmsg = {
             uri: attachments[0].url,
+            proxy_url: attachments[0].proxy_url,
             content: content,
             flags: flags,
             progress: (0, utls_1.content2progress)(content),
@@ -415,6 +418,12 @@ class WsMessage {
         this.waitMjEvents.set(nonce, { nonce });
         this.event.push({ event: nonce, callback: once });
     }
+    removeSkipMessageId(messageId) {
+        const index = this.skipMessageId.findIndex((id) => id !== messageId);
+        if (index !== -1) {
+            this.skipMessageId.splice(index, 1);
+        }
+    }
     removeWaitMjEvent(nonce) {
         this.waitMjEvents.delete(nonce);
     }
@@ -428,7 +437,9 @@ class WsMessage {
         };
         this.event.push({ event: nonce, callback: once });
     }
-    async waitImageMessage({ nonce, prompt, onmodal, loading, }) {
+    async waitImageMessage({ nonce, prompt, onmodal, messageId, loading, }) {
+        if (messageId)
+            this.skipMessageId.push(messageId);
         return new Promise((resolve, reject) => {
             const handleImageMessage = ({ message, error }) => {
                 if (error) {
@@ -438,6 +449,7 @@ class WsMessage {
                 }
                 if (message && message.progress === "done") {
                     this.removeWaitMjEvent(nonce);
+                    messageId && this.removeSkipMessageId(messageId);
                     resolve(message);
                     return;
                 }

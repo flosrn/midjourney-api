@@ -9,6 +9,7 @@ export interface MJMessage {
   options?: MJOptions[];
   attachment?: MJAttachment;
   referencedMessage?: MJMessage;
+  generationType?: string;
 }
 
 export interface MJAttachment {

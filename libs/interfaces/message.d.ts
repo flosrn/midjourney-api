@@ -1,5 +1,6 @@
 export interface MJMessage {
     uri: string;
+    proxy_url?: string;
     content: string;
     flags: number;
     id?: string;
@@ -8,6 +9,7 @@ export interface MJMessage {
     options?: MJOptions[];
     attachment?: MJAttachment;
     referencedMessage?: MJMessage;
+    generationType?: string;
 }
 export interface MJAttachment {
     height: number;

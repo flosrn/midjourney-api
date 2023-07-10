@@ -9,7 +9,7 @@ export interface MJMessage {
   options?: MJOptions[];
   attachment?: MJAttachment;
   referencedMessage?: MJMessage;
-  generationType?: string;
+  generationType?: GenerationType;
 }
 
 export interface MJAttachment {
@@ -22,6 +22,13 @@ export interface MJAttachment {
   filename: string;
   content_type: string;
 }
+
+export type GenerationType =
+  | "imagine"
+  | "save"
+  | "upscale"
+  | "variation"
+  | null;
 
 export type LoadingHandler = (uri: string, progress: string) => void;
 export type OnModal = (nonce: string, id: string) => Promise<string>;

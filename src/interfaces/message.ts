@@ -5,6 +5,7 @@ export interface MJMessage {
   flags: number;
   id?: string;
   hash?: string;
+  jobId?: string;
   progress?: string;
   options?: MJOptions[];
   attachment?: MJAttachment;

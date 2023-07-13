@@ -15,7 +15,9 @@ export declare class WsMessage {
     constructor(config: MJConfig, MJApi: MidjourneyApi);
     private heartbeat;
     close(): void;
-    private reconnect;
+    checkWs(): Promise<void>;
+    onceReady(): Promise<unknown>;
+    reconnect(): void;
     private open;
     private auth;
     timeout(ms: number): Promise<unknown>;

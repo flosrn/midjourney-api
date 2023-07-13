@@ -35,14 +35,9 @@ class Midjourney extends discord_message_1.MidjourneyMessage {
         }
         if (this.wsClient)
             return this;
-        return new Promise((resolve) => {
-            this.wsClient = new discord_ws_1.WsMessage(this.config, this.MJApi);
-            this.wsClient.once("ready", (user) => {
-                //print user nickname
-                console.log(`🎊 ws ready!!! Hi: ${user.global_name}`);
-                resolve(this);
-            });
-        });
+        this.wsClient = new discord_ws_1.WsMessage(this.config, this.MJApi);
+        await this.wsClient.onceReady();
+        return this;
     }
     async init() {
         await this.Connect();

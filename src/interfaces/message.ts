@@ -29,6 +29,9 @@ export type GenerationType =
   | "save"
   | "upscale"
   | "variation"
+  | "vary (strong)"
+  | "vary (subtle)"
+  | "zoomOut"
   | null;
 
 export type LoadingHandler = (uri: string, progress: string) => void;

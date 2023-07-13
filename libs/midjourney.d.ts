@@ -6,7 +6,7 @@ export declare class Midjourney extends MidjourneyMessage {
     private wsClient?;
     MJApi: MidjourneyApi;
     constructor(defaults: MJConfigParam);
-    Connect(): Promise<Midjourney>;
+    Connect(): Promise<this>;
     init(): Promise<this>;
     Imagine(prompt: string, loading?: LoadingHandler): Promise<import("./interfaces").MJMessage | null>;
     private getWsClient;

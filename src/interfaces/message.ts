@@ -29,8 +29,7 @@ export type GenerationType =
   | "save"
   | "upscale"
   | "variation"
-  | "vary (strong)"
-  | "vary (subtle)"
+  | "vary"
   | "zoomOut"
   | null;
 

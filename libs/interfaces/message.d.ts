@@ -58,6 +58,14 @@ export interface MJSettings {
     flags: number;
     options: MJOptions[];
 }
+export interface MJDescribe {
+    id: string;
+    flags: number;
+    uri: string;
+    proxy_url?: string;
+    options: MJOptions[];
+    descriptions: string[];
+}
 export interface MJShorten {
     description: string;
     id: string;

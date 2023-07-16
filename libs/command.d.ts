@@ -1,6 +1,6 @@
 import { DiscordImage, MJConfig } from "./interfaces";
 export declare const Commands: readonly ["ask", "blend", "describe", "fast", "help", "imagine", "info", "prefer", "private", "public", "relax", "settings", "show", "stealth", "shorten", "subscribe"];
-export type CommandName = typeof Commands[number];
+export type CommandName = (typeof Commands)[number];
 export declare class Command {
     config: MJConfig;
     constructor(config: MJConfig);

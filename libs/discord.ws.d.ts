@@ -1,4 +1,4 @@
-import { MJConfig, MJMessage, LoadingHandler, MJEmit, MJInfo, MJSettings, MJOptions, OnModal, MJShorten } from "./interfaces";
+import { MJConfig, MJMessage, LoadingHandler, MJEmit, MJInfo, MJSettings, OnModal, MJShorten, MJDescribe } from "./interfaces";
 import { MidjourneyApi } from "./midjourne.api";
 import WebSocket from "isomorphic-ws";
 export declare class WsMessage {
@@ -28,6 +28,7 @@ export declare class WsMessage {
     private onMessageCreate;
     private onMessageUpdate;
     private parseMessage;
+    private continue;
     private verifyHuman;
     private EventError;
     private done;
@@ -60,10 +61,7 @@ export declare class WsMessage {
         onmodal?: OnModal;
         loading?: LoadingHandler;
     }): Promise<MJMessage | null>;
-    waitDescribe(nonce: string): Promise<{
-        options: MJOptions[];
-        descriptions: string[];
-    } | null>;
+    waitDescribe(nonce: string): Promise<MJDescribe | null>;
     waitShorten(nonce: string): Promise<MJShorten | null>;
     waitContent(event: string): Promise<string | null>;
     waitInfo(): Promise<MJInfo | null>;

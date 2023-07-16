@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MidjourneyApi = void 0;
 const tslib_1 = require("tslib");
 const interfaces_1 = require("./interfaces");
-const utls_1 = require("./utls");
+const utils_1 = require("./utils");
 const command_1 = require("./command");
 const async_1 = tslib_1.__importDefault(require("async"));
 const path_1 = tslib_1.__importDefault(require("path"));
@@ -34,7 +34,7 @@ class MidjourneyApi extends command_1.Command {
     processRequest = async ({ request, callback, }) => {
         const httpStatus = await this.interactions(request);
         callback(httpStatus);
-        await (0, utls_1.sleep)(this.config.ApiInterval);
+        await (0, utils_1.sleep)(this.config.ApiInterval);
     };
     queue = async_1.default.queue(this.processRequest, 1);
     interactions = async (payload) => {
@@ -61,19 +61,19 @@ class MidjourneyApi extends command_1.Command {
             return 500;
         }
     };
-    async ImagineApi(prompt, nonce = (0, utls_1.nextNonce)()) {
+    async ImagineApi(prompt, nonce = (0, utils_1.nextNonce)()) {
         const payload = await this.imaginePayload(prompt, nonce);
         return this.safeIteractions(payload);
     }
-    async SwitchRemixApi(nonce = (0, utls_1.nextNonce)()) {
+    async SwitchRemixApi(nonce = (0, utils_1.nextNonce)()) {
         const payload = await this.PreferPayload(nonce);
         return this.safeIteractions(payload);
     }
-    async ShortenApi(prompt, nonce = (0, utls_1.nextNonce)()) {
+    async ShortenApi(prompt, nonce = (0, utils_1.nextNonce)()) {
         const payload = await this.shortenPayload(prompt, nonce);
         return this.safeIteractions(payload);
     }
-    async VariationApi({ index, msgId, hash, nonce = (0, utls_1.nextNonce)(), flags = 0, }) {
+    async VariationApi({ index, msgId, hash, nonce = (0, utils_1.nextNonce)(), flags = 0, }) {
         return this.CustomApi({
             msgId,
             customId: `MJ::JOB::variation::${index}::${hash}`,
@@ -81,7 +81,7 @@ class MidjourneyApi extends command_1.Command {
             nonce,
         });
     }
-    async UpscaleApi({ index, msgId, hash, nonce = (0, utls_1.nextNonce)(), flags, }) {
+    async UpscaleApi({ index, msgId, hash, nonce = (0, utils_1.nextNonce)(), flags, }) {
         return this.CustomApi({
             msgId,
             customId: `MJ::JOB::upsample::${index}::${hash}`,
@@ -89,7 +89,7 @@ class MidjourneyApi extends command_1.Command {
             nonce,
         });
     }
-    async RerollApi({ msgId, hash, nonce = (0, utls_1.nextNonce)(), flags, }) {
+    async RerollApi({ msgId, hash, nonce = (0, utils_1.nextNonce)(), flags, }) {
         return this.CustomApi({
             msgId,
             customId: `MJ::JOB::reroll::0::${hash}::SOLO`,
@@ -97,7 +97,7 @@ class MidjourneyApi extends command_1.Command {
             nonce,
         });
     }
-    async CustomApi({ msgId, customId, flags, nonce = (0, utls_1.nextNonce)(), }) {
+    async CustomApi({ msgId, customId, flags, nonce = (0, utils_1.nextNonce)(), }) {
         if (!msgId)
             throw new Error("msgId is empty");
         if (flags === undefined)
@@ -228,7 +228,7 @@ class MidjourneyApi extends command_1.Command {
         };
         return resp;
     }
-    async UploadImageByBole(blob, filename = "image.png") {
+    async UploadImageByBole(blob, filename = (0, utils_1.nextNonce)() + ".png") {
         const fileData = await blob.arrayBuffer();
         const mimeType = blob.type;
         const file_size = fileData.byteLength;
@@ -286,6 +286,28 @@ class MidjourneyApi extends command_1.Command {
     async DescribeApi(image, nonce) {
         const payload = await this.describePayload(image, nonce);
         return this.safeIteractions(payload);
+    }
+    async upImageApi(image, nonce) {
+        const { SalaiToken, DiscordBaseUrl, ChannelId, fetch } = this.config;
+        const payload = {
+            content: "",
+            nonce,
+            channel_id: ChannelId,
+            type: 0,
+            sticker_ids: [],
+            attachments: [image],
+        };
+        const url = new URL(`${DiscordBaseUrl}/api/v9/channels/${ChannelId}/messages`);
+        const headers = {
+            Authorization: SalaiToken,
+            "content-type": "application/json",
+        };
+        const response = await fetch(url, {
+            headers,
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+        return response.status;
     }
 }
 exports.MidjourneyApi = MidjourneyApi;

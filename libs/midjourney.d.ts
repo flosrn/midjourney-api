@@ -16,10 +16,8 @@ export declare class Midjourney extends MidjourneyMessage {
     Fast(): Promise<null>;
     Relax(): Promise<null>;
     SwitchRemix(): Promise<string | null>;
-    Describe(imgUri: string): Promise<{
-        options: import("./interfaces").MJOptions[];
-        descriptions: string[];
-    } | null>;
+    Describe(imgUri: string): Promise<import("./interfaces").MJDescribe | null>;
+    DescribeByBlob(blob: Blob): Promise<import("./interfaces").MJDescribe | null>;
     Shorten(prompt: string): Promise<import("./interfaces").MJShorten | null>;
     Variation({ index, msgId, hash, content, flags, loading, }: {
         index: 1 | 2 | 3 | 4;
@@ -59,5 +57,6 @@ export declare class Midjourney extends MidjourneyMessage {
         flags: number;
         loading?: LoadingHandler;
     }): Promise<import("./interfaces").MJMessage | null>;
+    FaceSwap(target: string, source: string): Promise<import("./interfaces").MJDescribe | null>;
     Close(): void;
 }

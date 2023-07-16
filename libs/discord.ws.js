@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WsMessage = void 0;
-const utls_1 = require("./utls");
+const utils_1 = require("./utils");
 const verify_human_1 = require("./verify.human");
 class WsMessage {
     config;
@@ -122,6 +122,12 @@ class WsMessage {
                 this.log("embeds[0].color", color);
                 switch (color) {
                     case 16711680: //error
+                        if (title == "Action needed to continue") {
+                            return this.continue(message);
+                        }
+                        else if (title == "Pending mod message") {
+                            return this.continue(message);
+                        }
                         const error = new Error(description);
                         this.EventError(id, error);
                         return;
@@ -160,10 +166,16 @@ class WsMessage {
                     this.emit("settings", message);
                     return;
                 case "describe":
-                    this.emitMJ(id, {
+                    // console.log("describe", "meseesage", message);
+                    const describe = {
+                        id: id,
+                        flags: message.flags,
                         descriptions: embeds?.[0]?.description.split("\n\n"),
-                        options: (0, utls_1.formatOptions)(components),
-                    });
+                        uri: embeds?.[0]?.image?.url,
+                        proxy_url: embeds?.[0]?.image?.proxy_url,
+                        options: (0, utils_1.formatOptions)(components),
+                    };
+                    this.emitMJ(id, describe);
                     break;
                 case "prefer remix":
                     if (content != "") {
@@ -173,8 +185,8 @@ class WsMessage {
                 case "shorten":
                     const shorten = {
                         description: embeds?.[0]?.description,
-                        prompts: (0, utls_1.formatPrompts)(embeds?.[0]?.description),
-                        options: (0, utls_1.formatOptions)(components),
+                        prompts: (0, utils_1.formatPrompts)(embeds?.[0]?.description),
+                        options: (0, utils_1.formatOptions)(components),
                         id,
                         flags: message.flags,
                     };
@@ -261,13 +273,34 @@ class WsMessage {
                 }
         }
     }
+    //continue click appeal or Acknowledged
+    async continue(message) {
+        const { components, id, flags, nonce } = message;
+        const appeal = components[0]?.components[0];
+        this.log("appeal", appeal);
+        if (appeal) {
+            var newnonce = (0, utils_1.nextNonce)();
+            const httpStatus = await this.MJApi.CustomApi({
+                msgId: id,
+                customId: appeal.custom_id,
+                flags,
+                nonce: newnonce,
+            });
+            this.log("appeal.httpStatus", httpStatus);
+            if (httpStatus == 204) {
+                this.on(newnonce, (data) => {
+                    this.emit(nonce, data);
+                });
+            }
+        }
+    }
     async verifyHuman(message) {
         const { HuggingFaceToken } = this.config;
         if (HuggingFaceToken === "" || !HuggingFaceToken) {
             this.log("HuggingFaceToken is empty");
             return;
         }
-        const { embeds, components, id, flags } = message;
+        const { embeds, components, id, flags, nonce } = message;
         const uri = embeds[0].image.url;
         const categories = components[0].components;
         const classify = categories.map((c) => c.label);
@@ -275,11 +308,18 @@ class WsMessage {
         const category = await verifyClient.verify(uri, classify);
         if (category) {
             const custom_id = categories.find((c) => c.label === category).custom_id;
+            var newnonce = (0, utils_1.nextNonce)();
             const httpStatus = await this.MJApi.CustomApi({
                 msgId: id,
                 customId: custom_id,
                 flags,
+                nonce: newnonce,
             });
+            if (httpStatus == 204) {
+                this.on(newnonce, (data) => {
+                    this.emit(nonce, data);
+                });
+            }
             this.log("verifyHumanApi", httpStatus, custom_id, message.id);
         }
     }
@@ -299,11 +339,11 @@ class WsMessage {
             id,
             flags,
             content,
-            hash: (0, utls_1.uriToHash)(attachments[0].url),
+            hash: (0, utils_1.uriToHash)(attachments[0].url),
             progress: "done",
             uri: attachments[0].url,
             proxy_url: attachments[0].proxy_url,
-            options: (0, utls_1.formatOptions)(components),
+            options: (0, utils_1.formatOptions)(components),
             attachment: attachments[0],
             referencedMessage: referenced_message?.attachments?.[0]
         };
@@ -329,7 +369,7 @@ class WsMessage {
             proxy_url: attachments[0].proxy_url,
             content: content,
             flags: flags,
-            progress: (0, utls_1.content2progress)(content),
+            progress: (0, utils_1.content2progress)(content),
         };
         const eventMsg = {
             message: MJmsg,
@@ -348,9 +388,9 @@ class WsMessage {
         this.emitImage(event.nonce, eventMsg);
     }
     getEventByContent(content) {
-        const prompt = (0, utls_1.content2prompt)(content);
+        const prompt = (0, utils_1.content2prompt)(content);
         for (const [key, value] of this.waitMjEvents.entries()) {
-            if (prompt === (0, utls_1.content2prompt)(value.prompt)) {
+            if (prompt === (0, utils_1.content2prompt)(value.prompt)) {
                 return value;
             }
         }
@@ -528,7 +568,7 @@ class WsMessage {
     async waitInfo() {
         return new Promise((resolve, reject) => {
             this.onceInfo((message) => {
-                resolve((0, utls_1.formatInfo)(message));
+                resolve((0, utils_1.formatInfo)(message));
             });
         });
     }
@@ -539,7 +579,7 @@ class WsMessage {
                     id: message.id,
                     flags: message.flags,
                     content: message,
-                    options: (0, utls_1.formatOptions)(message.components),
+                    options: (0, utils_1.formatOptions)(message.components),
                 });
             });
         });

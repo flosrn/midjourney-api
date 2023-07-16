@@ -85,4 +85,5 @@ export declare class MidjourneyApi extends Command {
     private attachments;
     private uploadImage;
     DescribeApi(image: DiscordImage, nonce?: string): Promise<number>;
+    upImageApi(image: DiscordImage, nonce?: string): Promise<number>;
 }

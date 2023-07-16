@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MidjourneyMessage = void 0;
 const tslib_1 = require("tslib");
 const interfaces_1 = require("./interfaces");
-const utls_1 = require("./utls");
+const utils_1 = require("./utils");
 const async_1 = tslib_1.__importDefault(require("async"));
 class MidjourneyMessage {
     config;
@@ -37,7 +37,7 @@ class MidjourneyMessage {
     processRequest = async ({ request, callback, }) => {
         const httpStatus = await this.RetrieveMessages(request);
         callback(httpStatus);
-        await (0, utls_1.sleep)(this.config.ApiInterval);
+        await (0, utils_1.sleep)(this.config.ApiInterval);
     };
     queue = async_1.default.queue(this.processRequest, 1);
     log(...args) {
@@ -79,7 +79,7 @@ class MidjourneyMessage {
                     flags: item.flags,
                     hash: this.UriToHash(imageUrl),
                     progress: "done",
-                    options: (0, utls_1.formatOptions)(item.components),
+                    options: (0, utils_1.formatOptions)(item.components),
                 };
                 return msg;
             }
@@ -111,7 +111,7 @@ class MidjourneyMessage {
                 return msg;
             }
             this.log(i, "wait no message found");
-            await (0, utls_1.sleep)(1000 * 2);
+            await (0, utils_1.sleep)(1000 * 2);
         }
         return null;
     }

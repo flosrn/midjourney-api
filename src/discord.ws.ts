@@ -9,6 +9,7 @@ import {
   MJOptions,
   OnModal,
   MJShorten,
+  MJDescribe,
 } from "./interfaces";
 import { MidjourneyApi } from "./midjourne.api";
 import {
@@ -17,8 +18,9 @@ import {
   formatInfo,
   formatOptions,
   formatPrompts,
+  nextNonce,
   uriToHash,
-} from "./utls";
+} from "./utils";
 import { VerifyHuman } from "./verify.human";
 import WebSocket from "isomorphic-ws";
 export class WsMessage {
@@ -139,6 +141,12 @@ export class WsMessage {
         this.log("embeds[0].color", color);
         switch (color) {
           case 16711680: //error
+            if (title == "Action needed to continue") {
+              return this.continue(message);
+            } else if (title == "Pending mod message") {
+              return this.continue(message);
+            }
+
             const error = new Error(description);
             this.EventError(id, error);
             return;
@@ -174,6 +182,7 @@ export class WsMessage {
 
     this.messageUpdate(message);
   }
+
   private messageUpdate(message: any) {
     // this.log("messageUpdate", message);
     const {
@@ -193,10 +202,16 @@ export class WsMessage {
           this.emit("settings", message);
           return;
         case "describe":
-          this.emitMJ(id, {
+          // console.log("describe", "meseesage", message);
+          const describe: MJDescribe = {
+            id: id,
+            flags: message.flags,
             descriptions: embeds?.[0]?.description.split("\n\n"),
+            uri: embeds?.[0]?.image?.url,
+            proxy_url: embeds?.[0]?.image?.proxy_url,
             options: formatOptions(components),
-          });
+          };
+          this.emitMJ(id, describe);
           break;
         case "prefer remix":
           if (content != "") {
@@ -298,13 +313,34 @@ export class WsMessage {
         }
     }
   }
+  //continue click appeal or Acknowledged
+  private async continue(message: any) {
+    const { components, id, flags, nonce } = message;
+    const appeal = components[0]?.components[0];
+    this.log("appeal", appeal);
+    if (appeal) {
+      var newnonce = nextNonce();
+      const httpStatus = await this.MJApi.CustomApi({
+        msgId: id,
+        customId: appeal.custom_id,
+        flags,
+        nonce: newnonce,
+      });
+      this.log("appeal.httpStatus", httpStatus);
+      if (httpStatus == 204) {
+        this.on(newnonce, (data) => {
+          this.emit(nonce, data);
+        });
+      }
+    }
+  }
   private async verifyHuman(message: any) {
     const { HuggingFaceToken } = this.config;
     if (HuggingFaceToken === "" || !HuggingFaceToken) {
       this.log("HuggingFaceToken is empty");
       return;
     }
-    const { embeds, components, id, flags } = message;
+    const { embeds, components, id, flags, nonce } = message;
     const uri = embeds[0].image.url;
     const categories = components[0].components;
     const classify = categories.map((c: any) => c.label);
@@ -314,11 +350,18 @@ export class WsMessage {
       const custom_id = categories.find(
         (c: any) => c.label === category
       ).custom_id;
+      var newnonce = nextNonce();
       const httpStatus = await this.MJApi.CustomApi({
         msgId: id,
         customId: custom_id,
         flags,
+        nonce: newnonce,
       });
+      if (httpStatus == 204) {
+        this.on(newnonce, (data) => {
+          this.emit(nonce, data);
+        });
+      }
       this.log("verifyHumanApi", httpStatus, custom_id, message.id);
     }
   }
@@ -572,10 +615,7 @@ export class WsMessage {
     });
   }
   async waitDescribe(nonce: string) {
-    return new Promise<{
-      options: MJOptions[];
-      descriptions: string[];
-    } | null>((resolve) => {
+    return new Promise<MJDescribe | null>((resolve) => {
       this.onceMJ(nonce, (message) => {
         resolve(message);
       });

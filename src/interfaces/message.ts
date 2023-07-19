@@ -31,6 +31,7 @@ export type GenerationType =
   | "variation"
   | "vary"
   | "zoomOut"
+  | "pan"
   | null;
 
 export type LoadingHandler = (uri: string, progress: string) => void;

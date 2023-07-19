@@ -22,7 +22,7 @@ export interface MJAttachment {
     filename: string;
     content_type: string;
 }
-export type GenerationType = "imagine" | "save" | "upscale" | "variation" | "vary" | "zoomOut" | "pan" | null;
+export type GenerationType = "imagine" | "save" | "upscale" | "variation" | "vary" | "zoomOut" | "square" | "pan" | null;
 export type LoadingHandler = (uri: string, progress: string) => void;
 export type OnModal = (nonce: string, id: string) => Promise<string>;
 export interface WaitMjEvent {

@@ -31,6 +31,7 @@ export type GenerationType =
   | "variation"
   | "vary"
   | "zoomOut"
+  | "square"
   | "pan"
   | null;
 

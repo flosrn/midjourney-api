@@ -17,8 +17,7 @@ async function main() {
     Ws: true, //enable ws is required for custom zoom
   });
   await client.init();
-  const prompt =
-    "Christmas dinner with spaghetti with family in a cozy house, we see interior details , simple blue&white illustration";
+  const prompt = "A tiger in the garden.";
   const Imagine = await client.Imagine(
     prompt,
     (uri: string, progress: string) => {
@@ -45,17 +44,17 @@ async function main() {
   }
   console.log(Upscale);
 
-  const vary = Upscale?.options?.find((o) => o.label === "Vary (Strong)");
-  if (!vary) {
-    console.log("no zoomout");
+  const panLeft = Upscale?.options?.find((o) => o.label === "⬅️");
+  if (!panLeft) {
+    console.log("no pan");
     return;
   }
   await sleep(1400);
   const varyCustom = await client.Custom({
     msgId: <string>Upscale.id,
     flags: Upscale.flags,
-    content: `${prompt} --zoom 2`,
-    customId: vary.custom,
+    content: prompt,
+    customId: panLeft.custom,
     loading: (uri: string, progress: string) => {
       console.log("loading", uri, "progress", progress);
     },

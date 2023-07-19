@@ -15,6 +15,7 @@ exports.DefaultMJConfig = {
     Limit: 50,
     Ws: true,
     MaxWait: 200,
+    ImageProxy: "",
     DiscordBaseUrl: "https://discord.com",
     WsBaseUrl: "wss://gateway.discord.gg?v=9&encoding=json&compress=gzip-stream",
     fetch: fetch,

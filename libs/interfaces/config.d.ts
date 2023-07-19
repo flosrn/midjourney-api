@@ -20,6 +20,7 @@ export interface MJConfig {
     fetch: FetchFn;
     ApiInterval: number;
     WebSocket: WebSocketCl;
+    ImageProxy: string;
 }
 export interface MJConfigParam {
     SalaiToken: string;
@@ -34,6 +35,7 @@ export interface MJConfigParam {
     HuggingFaceToken?: string;
     SessionId?: string;
     DiscordBaseUrl?: string;
+    ImageProxy?: string;
     WsBaseUrl?: string;
     fetch?: FetchFn;
     WebSocket?: WebSocketCl;

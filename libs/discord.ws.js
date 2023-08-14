@@ -21,6 +21,7 @@ class WsMessage {
         this.ws.addEventListener("open", this.open.bind(this));
         this.onSystem("messageCreate", this.onMessageCreate.bind(this));
         this.onSystem("messageUpdate", this.onMessageUpdate.bind(this));
+        this.onSystem("messageDelete", this.onMessageDelete.bind(this));
         this.onSystem("ready", this.onReady.bind(this));
         this.onSystem("interactionSuccess", this.onInteractionSuccess.bind(this));
     }
@@ -232,7 +233,7 @@ class WsMessage {
             return;
         if (interaction && interaction.user.id !== this.UserId)
             return;
-        this.log("[messageCreate]", JSON.stringify(message));
+        // this.log("[messageCreate]", JSON.stringify(message));
         this.messageCreate(message);
     }
     async onMessageUpdate(message) {
@@ -243,8 +244,18 @@ class WsMessage {
             return;
         if (interaction && interaction.user.id !== this.UserId)
             return;
-        this.log("[messageUpdate]", JSON.stringify(message));
+        // this.log("[messageUpdate]", JSON.stringify(message));
         this.messageUpdate(message);
+    }
+    async onMessageDelete(message) {
+        const { channel_id, id } = message;
+        if (channel_id !== this.config.ChannelId)
+            return;
+        for (const [key, value] of this.waitMjEvents.entries()) {
+            if (value.id === id) {
+                this.waitMjEvents.set(key, { ...value, del: true });
+            }
+        }
     }
     // parse message from ws
     parseMessage(data) {
@@ -253,6 +264,9 @@ class WsMessage {
             return;
         }
         const message = msg.d;
+        if (message.channel_id === this.config.ChannelId) {
+            this.log(data);
+        }
         this.log("event", msg.t);
         // console.log(data);
         switch (msg.t) {
@@ -265,6 +279,8 @@ class WsMessage {
             case "MESSAGE_UPDATE":
                 this.emitSystem("messageUpdate", message);
                 break;
+            case "MESSAGE_DELETE":
+                this.emitSystem("messageDelete", message);
             case "INTERACTION_SUCCESS":
                 if (message.nonce) {
                     this.emitSystem("interactionSuccess", message);
@@ -338,7 +354,8 @@ class WsMessage {
     }
     done(message) {
         const { content, id, attachments, components, flags, referenced_message } = message;
-        let uri = attachments[0].url;
+        const { url, proxy_url, width, height } = attachments[0];
+        let uri = url;
         if (this.config.ImageProxy !== "") {
             uri = uri.replace("https://cdn.discordapp.com/", this.config.ImageProxy);
         }
@@ -346,13 +363,15 @@ class WsMessage {
             id,
             flags,
             content,
-            hash: (0, utils_1.uriToHash)(attachments[0].url),
+            hash: (0, utils_1.uriToHash)(url),
             progress: "done",
-            uri: uri,
-            proxy_url: attachments[0].proxy_url,
+            uri,
+            proxy_url,
             options: (0, utils_1.formatOptions)(components),
             attachment: attachments[0],
-            referencedMessage: referenced_message?.attachments?.[0]
+            referencedMessage: referenced_message?.attachments?.[0],
+            width,
+            height,
         };
         this.filterMessages(MJmsg);
         return;
@@ -387,7 +406,9 @@ class WsMessage {
         };
         this.emitImage(event.nonce, eventMsg);
     }
-    filterMessages(MJmsg) {
+    async filterMessages(MJmsg) {
+        // delay 300ms for discord message delete
+        await this.timeout(300);
         const event = this.getEventByContent(MJmsg.content);
         if (!event) {
             this.log("FilterMessages not found", MJmsg, this.waitMjEvents);
@@ -400,6 +421,13 @@ class WsMessage {
     }
     getEventByContent(content) {
         const prompt = (0, utils_1.content2prompt)(content);
+        //fist del message
+        for (const [key, value] of this.waitMjEvents.entries()) {
+            if (value.del === true &&
+                prompt === (0, utils_1.content2prompt)(value.prompt)) {
+                return value;
+            }
+        }
         for (const [key, value] of this.waitMjEvents.entries()) {
             if (prompt === (0, utils_1.content2prompt)(value.prompt)) {
                 return value;

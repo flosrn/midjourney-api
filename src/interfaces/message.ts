@@ -8,6 +8,8 @@ export interface MJMessage {
   jobId?: string;
   progress?: string;
   options?: MJOptions[];
+  width?: number;
+  height?: number;
   attachment?: MJAttachment;
   referencedMessage?: MJMessage;
   generationType?: GenerationType;
@@ -42,6 +44,7 @@ export interface WaitMjEvent {
   nonce: string;
   prompt?: string;
   id?: string;
+  del?: boolean; // is delete message
   onmodal?: OnModal;
 }
 export interface MJEmit {

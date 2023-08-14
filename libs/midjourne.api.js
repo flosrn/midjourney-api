@@ -6,7 +6,6 @@ const interfaces_1 = require("./interfaces");
 const utils_1 = require("./utils");
 const command_1 = require("./command");
 const async_1 = tslib_1.__importDefault(require("async"));
-const path_1 = tslib_1.__importDefault(require("path"));
 class MidjourneyApi extends command_1.Command {
     config;
     UpId = Date.now() % 10; // upload id
@@ -209,7 +208,7 @@ class MidjourneyApi extends command_1.Command {
         const response = await this.config.fetch(fileUrl);
         const fileData = await response.arrayBuffer();
         const mimeType = response.headers.get("content-type");
-        const filename = path_1.default.basename(fileUrl) || "image.png";
+        const filename = fileUrl.split("/").pop() || "image.png";
         const file_size = fileData.byteLength;
         if (!mimeType) {
             throw new Error("Unknown mime type");
@@ -223,7 +222,7 @@ class MidjourneyApi extends command_1.Command {
         await this.uploadImage(UploadSlot, fileData, mimeType);
         const resp = {
             id: UploadSlot.id,
-            filename: path_1.default.basename(UploadSlot.upload_filename),
+            filename: UploadSlot.upload_filename.split("/").pop() || "image.png",
             upload_filename: UploadSlot.upload_filename,
         };
         return resp;
@@ -244,7 +243,7 @@ class MidjourneyApi extends command_1.Command {
         await this.uploadImage(UploadSlot, fileData, mimeType);
         const resp = {
             id: UploadSlot.id,
-            filename: path_1.default.basename(UploadSlot.upload_filename),
+            filename: UploadSlot.upload_filename.split("/").pop() || "image.png",
             upload_filename: UploadSlot.upload_filename,
         };
         return resp;

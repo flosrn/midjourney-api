@@ -31,6 +31,7 @@ export interface MJConfigParam {
     ApiInterval?: number;
     Limit?: number;
     MaxWait?: number;
+    Remix?: boolean;
     Ws?: boolean;
     HuggingFaceToken?: string;
     SessionId?: string;

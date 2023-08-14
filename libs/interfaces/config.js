@@ -17,7 +17,7 @@ exports.DefaultMJConfig = {
     MaxWait: 200,
     ImageProxy: "",
     DiscordBaseUrl: "https://discord.com",
-    WsBaseUrl: "wss://gateway.discord.gg?v=9&encoding=json&compress=gzip-stream",
+    WsBaseUrl: "wss://gateway.discord.gg/?encoding=json&v=9",
     fetch: fetch,
     WebSocket: isomorphic_ws_1.default,
 };

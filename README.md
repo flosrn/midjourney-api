@@ -2,7 +2,7 @@
 
 Node.js client for the unofficial MidJourney api.
 
-English / [中文文档](readme_zh.md)
+English / [中文文档](README_zh.md)
 
 <div align="center">
 	<p>
@@ -39,8 +39,7 @@ To run the included example, you must have [Node.js](https://nodejs.org/en/) ins
 
 3. set the environment variables
 
-- [Login Discord](https://discord.com/channels/@me)  
-  `F12` _OR_ `Ctrl + Shift + I` (or `Command + Option + I` on Mac) to open the developer tools _AND_ paste the following code into the console
+- [Login Discord](https://discord.com/channels/@me)`F12` _OR_ `Ctrl + Shift + I` (or `Command + Option + I` on Mac) to open the developer tools _AND_ paste the following code into the console
 
   ```javascript
   window.webpackChunkdiscord_app.push([
@@ -66,11 +65,14 @@ To run the included example, you must have [Node.js](https://nodejs.org/en/) ins
   OR [use network your Discord TOKEN](https://www.androidauthority.com/get-discord-token-3149920/)
 
 - [Join my discord server](https://discord.com/invite/GavuGHQbV4)
+
   ```
   export SERVER_ID="1082500871478329374"
   export CHANNEL_ID="1094892992281718894"
   ```
+
 - OR [Create a server](https://discord.com/blog/starting-your-first-discord-server) and [Invite Midjourney Bot to Your Server](https://docs.midjourney.com/docs/invite-the-bot)
+
   ```bash
   # How to get server and channel ids:
   # when you click on a channel in your server in the browser
@@ -79,6 +81,7 @@ To run the included example, you must have [Node.js](https://nodejs.org/en/) ins
   export SERVER_ID="your-server-id"
   export CHANNEL_ID="your-channel-id"
   ```
+
 - wirte your token to `.env` file or set the environment variables
 
   ```bash
@@ -115,7 +118,29 @@ To run the included example, you must have [Node.js](https://nodejs.org/en/) ins
    yarn add midjourney
    ```
 
-2. Use Imagine 、Variation and Upscale
+2. config param
+   ```typescript
+   export interface MJConfigParam {
+     SalaiToken: string; //DISCORD_TOKEN
+     ChannelId?: string; //DISCORD_CHANNEL_ID
+     ServerId?: string; //DISCORD_SERVER_ID
+     BotId?: typeof MJBot | typeof NijiBot; //DISCORD_BOT_ID MJBot OR NijiBot
+     Debug?: boolean; // print log
+     ApiInterval?: number; //ApiInterval request api interval
+     Limit?: number; //Limit of get message list
+     MaxWait?: number;
+     Remix?: boolean; //Remix:true use remix mode
+     Ws?: boolean; //Ws:true use websocket get discord message (ephemeral message)
+     HuggingFaceToken?: string; //HuggingFaceToken for verify human
+     SessionId?: string;
+     DiscordBaseUrl?: string;
+     ImageProxy?: string;
+     WsBaseUrl?: string;
+     fetch?: FetchFn; //Node.js<18 need node.fetch Or proxy
+     WebSocket?: WebSocketCl; //isomorphic-ws Or proxy
+   }
+   ```
+3. Use Imagine 、Variation and Upscale
 
    ```typescript
    import { Midjourney } from "midjourney";
@@ -124,38 +149,79 @@ To run the included example, you must have [Node.js](https://nodejs.org/en/) ins
      ChannelId: <string>process.env.CHANNEL_ID,
      SalaiToken: <string>process.env.SALAI_TOKEN,
      Debug: true,
-     Ws: true,
+     Ws: true, //enable ws is required for remix mode (and custom zoom)
    });
-   await client.Connect();
+   await client.init();
+   const prompt =
+     "Christmas dinner with spaghetti with family in a cozy house, we see interior details , simple blue&white illustration";
+   //imagine
    const Imagine = await client.Imagine(
-     "A little pink elephant",
+     prompt,
      (uri: string, progress: string) => {
-       console.log("Imagine", uri, "progress", progress);
+       console.log("loading", uri, "progress", progress);
      }
    );
-   console.log({ Imagine });
-
-   const Variation = await client.Variation({
-     index: 2,
+   console.log(Imagine);
+   if (!Imagine) {
+     console.log("no message");
+     return;
+   }
+   //U1 U2 U3 U4 V1 V2 V3 V4  "Vary (Strong)" ...
+   //⬅️,⬆️,⬇️,➡️
+   const V1CustomID = Imagine.options?.find((o) => o.label === "V1")?.custom;
+   if (!V1CustomID) {
+     console.log("no V1");
+     return;
+   }
+   // Varition V1
+   const Varition = await client.Custom({
      msgId: <string>Imagine.id,
-     hash: <string>Imagine.hash,
      flags: Imagine.flags,
+     customId: V1CustomID,
+     content: prompt, //remix mode require content
      loading: (uri: string, progress: string) => {
-       console.log("Variation.loading", uri, "progress", progress);
+       console.log("loading", uri, "progress", progress);
      },
    });
-   console.log({ Variation });
-   const Upscale = await client.Upscale({
-     index: 2,
-     msgId: <string>Variation.id,
-     hash: <string>Variation.hash,
-     flags: Variation.flags,
+   console.log(Varition);
+   const U1CustomID = Imagine.options?.find((o) => o.label === "U1")?.custom;
+   if (!U1CustomID) {
+     console.log("no U1");
+     return;
+   }
+   // Upscale U1
+   const Upscale = await client.Custom({
+     msgId: <string>Imagine.id,
+     flags: Imagine.flags,
+     customId: U1CustomID,
      loading: (uri: string, progress: string) => {
-       console.log("Upscale.loading", uri, "progress", progress);
+       console.log("loading", uri, "progress", progress);
      },
    });
-   console.log({ Upscale });
+   if (!Upscale) {
+     console.log("no Upscale");
+     return;
+   }
+   console.log(Upscale);
+   const zoomout = Upscale?.options?.find((o) => o.label === "Custom Zoom");
+   if (!zoomout) {
+     console.log("no zoomout");
+     return;
+   }
+   // Custom Zoom
+   const CustomZoomout = await client.Custom({
+     msgId: <string>Upscale.id,
+     flags: Upscale.flags,
+     content: `${prompt} --zoom 2`, // Custom Zoom  require content
+     customId: zoomout.custom,
+     loading: (uri: string, progress: string) => {
+       console.log("loading", uri, "progress", progress);
+     },
+   });
+   console.log(CustomZoomout);
    ```
+
+
 
 ## route-map
 
@@ -189,7 +255,7 @@ To run the included example, you must have [Node.js](https://nodejs.org/en/) ins
 If you find it valuable and would like to show your support, any donations would be greatly appreciated. Your contribution helps me maintain and improve the program.
 
 <span style="word-spacing:20px">
-<img src="images/ali.png" height="300"/>&nbsp;&nbsp;
+<img src="images/ali.png" height="300"/>  
 <img src="images/wechat.png" height="300"/>
 <a href='https://ko-fi.com/erictik' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi1.png?v=3' border='0' alt='Buy Me a Coffee' /></a>
 </span>

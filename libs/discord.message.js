@@ -73,15 +73,18 @@ class MidjourneyMessage {
                 }
                 //finished
                 const content = item.content.split("**")[1];
+                const { proxy_url, width, height } = item.attachments[0];
                 const msg = {
                     content,
                     id: item.id,
-                    uri: uri,
-                    proxy_url: item.attachments[0].proxy_url,
+                    uri,
+                    proxy_url,
                     flags: item.flags,
                     hash: this.UriToHash(uri),
                     progress: "done",
                     options: (0, utils_1.formatOptions)(item.components),
+                    width,
+                    height,
                 };
                 return msg;
             }

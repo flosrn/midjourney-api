@@ -27,6 +27,7 @@ export declare class WsMessage {
     private onReady;
     private onMessageCreate;
     private onMessageUpdate;
+    private onMessageDelete;
     private parseMessage;
     private continue;
     private verifyHuman;
@@ -43,7 +44,7 @@ export declare class WsMessage {
     private emitImage;
     private emitMJ;
     on(event: string, callback: (message: any) => void): void;
-    onSystem(event: "ready" | "messageCreate" | "messageUpdate" | "interactionSuccess", callback: (message: any) => void): void;
+    onSystem(event: "ready" | "messageCreate" | "messageUpdate" | "messageDelete" | "interactionCreate" | "interactionSuccess", callback: (message: any) => void): void;
     private emitSystem;
     once(event: string, callback: (message: any) => void): void;
     remove(event: string, callback: (message: any) => void): void;

@@ -32,6 +32,7 @@ export interface MJConfigParam {
   ApiInterval?: number; //ApiInterval request api interval
   Limit?: number; //Limit of get message list
   MaxWait?: number;
+  Remix?: boolean; //Remix:true use remix mode
   Ws?: boolean; //Ws:true use websocket get discord message (ephemeral message)
   HuggingFaceToken?: string; //HuggingFaceToken for verify human
   SessionId?: string;
@@ -54,7 +55,7 @@ export const DefaultMJConfig: MJConfig = {
   MaxWait: 200,
   ImageProxy: "",
   DiscordBaseUrl: "https://discord.com",
-  WsBaseUrl: "wss://gateway.discord.gg?v=9&encoding=json&compress=gzip-stream",
+  WsBaseUrl: "wss://gateway.discord.gg/?encoding=json&v=9",
   fetch: fetch,
   WebSocket: WebSocket,
 };
